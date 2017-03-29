@@ -61,13 +61,13 @@ class SMTP(asyncio.StreamReaderProtocol):
                  loop=None):
         self.__ident__ = __ident__
         self.loop = loop if loop else asyncio.get_event_loop()
+        self.data_size_limit = data_size_limit
+        self.enable_SMTPUTF8 = enable_SMTPUTF8
         super().__init__(
             asyncio.StreamReader(loop=self.loop),
             client_connected_cb=self._client_connected_cb,
             loop=self.loop)
         self.event_handler = handler
-        self.data_size_limit = data_size_limit
-        self.enable_SMTPUTF8 = enable_SMTPUTF8
         if enable_SMTPUTF8:
             if decode_data:
                 raise ValueError(
