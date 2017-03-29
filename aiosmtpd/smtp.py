@@ -227,7 +227,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         yield from self.push(
             '220 {} {}'.format(self.hostname, self.__ident__))
         while not self._connection_closed:          # pragma: no branch
-            # XXX Put the line limit stuff into the StreamReader?
+            # WIP Handle ValueError from StreamReader.readline()
             line = yield from self._reader.readline()
             try:
                 # XXX this rstrip may not completely preserve old behavior.
