@@ -63,6 +63,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         self.loop = loop if loop else asyncio.get_event_loop()
         self.data_size_limit = data_size_limit
         self.enable_SMTPUTF8 = enable_SMTPUTF8
+        self._command_size_limits = self.get_esmtp_command_size_limits()
         super().__init__(
             asyncio.StreamReader(loop=self.loop),
             client_connected_cb=self._client_connected_cb,
@@ -125,7 +126,6 @@ class SMTP(asyncio.StreamReaderProtocol):
         """
         if not self.session.extended_smtp:
             return self.command_size_limit
-        assert self._command_size_limits is not None
         try:
             return max(self._command_size_limits.values())
         except ValueError:
@@ -139,7 +139,6 @@ class SMTP(asyncio.StreamReaderProtocol):
         """
         if not self.session.extended_smtp:
             return self.command_size_limit
-        assert self._command_size_limits is not None
         return self._command_size_limits[command]
 
     def connection_made(self, transport):
@@ -273,7 +272,6 @@ class SMTP(asyncio.StreamReaderProtocol):
         self._set_rset_state()
         self.session.host_name = hostname
         self.session.extended_smtp = False
-        self._command_size_limits = None
         yield from self.push('250 %s' % self.hostname)
 
     @asyncio.coroutine
@@ -298,7 +296,6 @@ class SMTP(asyncio.StreamReaderProtocol):
         self._set_rset_state()
         self.session.host_name = arg
         self.session.extended_smtp = True
-        self._command_size_limits = self.get_esmtp_command_size_limits()
         yield from self.push('250-%s' % self.hostname)
         if self.data_size_limit:
             yield from self.push('250-SIZE %s' % self.data_size_limit)
