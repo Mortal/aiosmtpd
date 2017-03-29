@@ -64,8 +64,9 @@ class SMTP(asyncio.StreamReaderProtocol):
         self.data_size_limit = data_size_limit
         self.enable_SMTPUTF8 = enable_SMTPUTF8
         self._command_size_limits = self.get_esmtp_command_size_limits()
+        limit = self._max_command_size_limit()
         super().__init__(
-            asyncio.StreamReader(loop=self.loop),
+            asyncio.StreamReader(loop=self.loop, limit=limit),
             client_connected_cb=self._client_connected_cb,
             loop=self.loop)
         self.event_handler = handler
