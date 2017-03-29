@@ -244,7 +244,9 @@ class SMTP(asyncio.StreamReaderProtocol):
                     command = line[:i].upper()
                     arg = line[i+1:].strip()
                 max_sz = self.get_command_size_limit(command)
-                if len(line) > max_sz:
+                # We stripped CRLF off line, but max_sz includes the CRLF.
+                # len(line) + 2 is len(line + CRLF).
+                if len(line) + 2 > max_sz:
                     yield from self.push('500 Error: line too long')
                     continue
                 if (self._tls_handshake_failed
