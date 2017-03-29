@@ -117,19 +117,16 @@ class SMTP(asyncio.StreamReaderProtocol):
             limits['MAIL'] += 10
         return limits
 
-    @property
-    def max_command_size_limit(self):
+    def _max_command_size_limit(self):
         """Get the maximum length of a command line, including the CRLF.
 
         This is used to limit the amount of data read from the client,
         so it should be the largest value returned by get_command_size_limit.
         """
-        if not self.session.extended_smtp:
-            return self.command_size_limit
         try:
             return max(self._command_size_limits.values())
         except ValueError:
-            return self._command_size_limits.default_factory()
+            return self.command_size_limit
 
     def get_command_size_limit(self, command):
         """Get the maximum length of a command line for the given command.
