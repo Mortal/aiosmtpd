@@ -64,7 +64,10 @@ class SMTP(asyncio.StreamReaderProtocol):
         self.data_size_limit = data_size_limit
         self.enable_SMTPUTF8 = enable_SMTPUTF8
         self._command_size_limits = self.get_esmtp_command_size_limits()
-        limit = self._max_command_size_limit()
+        limit = max(self._max_command_size_limit(),
+                    self._max_data_line_length())
+        # XXX StreamReader's limit does not include the LF,
+        # so this limit could be trimmed by 1 byte.
         super().__init__(
             asyncio.StreamReader(loop=self.loop, limit=limit),
             client_connected_cb=self._client_connected_cb,
@@ -128,6 +131,17 @@ class SMTP(asyncio.StreamReaderProtocol):
             return max(self._command_size_limits.values())
         except ValueError:
             return self.command_size_limit
+
+    def _max_data_line_length(self):
+        """Get the maximum length of a text line, cf. RFC 5321 4.5.3.1.6.
+
+        RFC 5321 specifies that the maximum total length of a text line
+        is 1000 bytes, including the CRLF, but excluding the leading dot
+        duplicated for transparency.
+
+        Thus the actual maximum length is 1001 bytes.
+        """
+        return 1001
 
     def get_command_size_limit(self, command):
         """Get the maximum length of a command line for the given command.
