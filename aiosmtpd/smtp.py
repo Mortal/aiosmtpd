@@ -49,7 +49,7 @@ class Envelope:
 @public
 class SMTP(asyncio.StreamReaderProtocol):
     command_size_limit = 512
-    command_size_limits = collections.defaultdict(
+    _command_size_limits = collections.defaultdict(
         lambda x=command_size_limit: x)
 
     def __init__(self, handler,
@@ -77,7 +77,7 @@ class SMTP(asyncio.StreamReaderProtocol):
                     "True at the same time")
             decode_data = False
         self._decode_data = decode_data
-        self.command_size_limits.clear()
+        self._command_size_limits.clear()
         if hostname:
             self.hostname = hostname
         else:
@@ -104,7 +104,7 @@ class SMTP(asyncio.StreamReaderProtocol):
     @property
     def max_command_size_limit(self):
         try:
-            return max(self.command_size_limits.values())
+            return max(self._command_size_limits.values())
         except ValueError:
             return self.command_size_limit
 
@@ -116,7 +116,7 @@ class SMTP(asyncio.StreamReaderProtocol):
         """
         if not self.session.extended_smtp:
             return self.command_size_limit
-        return self.command_size_limits[command]
+        return self._command_size_limits[command]
 
     def connection_made(self, transport):
         # Reset state due to rfc3207 part 4.2.
@@ -276,12 +276,12 @@ class SMTP(asyncio.StreamReaderProtocol):
         yield from self.push('250-%s' % self.hostname)
         if self.data_size_limit:
             yield from self.push('250-SIZE %s' % self.data_size_limit)
-            self.command_size_limits['MAIL'] += 26
+            self._command_size_limits['MAIL'] += 26
         if not self._decode_data:
             yield from self.push('250-8BITMIME')
         if self.enable_SMTPUTF8:
             yield from self.push('250-SMTPUTF8')
-            self.command_size_limits['MAIL'] += 10
+            self._command_size_limits['MAIL'] += 10
         if (self.tls_context and
                 not self._tls_protocol and
                 _has_ssl):                        # pragma: nossl
